@@ -82,3 +82,9 @@ class ZirveAccountingProvider(AccountingProvider):
             response.raise_for_status()
             data = response.json()
         return data.get("id", invoice.reference_no)
+
+    def cancel_invoice(self, external_id: str) -> None:
+        # TODO: gerçek endpoint path'i teyit edilecek (örn. /fatura/{id}/iptal).
+        with self._client() as client:
+            response = client.post(f"/fatura/{external_id}/iptal")
+            response.raise_for_status()

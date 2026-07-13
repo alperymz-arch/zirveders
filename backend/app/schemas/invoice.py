@@ -32,3 +32,4 @@ class InvoiceOut(BaseModel):
     external_id: str | None
     error_message: str | None
     created_at: datetime
+    deleted_at: datetime | None

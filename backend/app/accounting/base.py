@@ -36,3 +36,8 @@ class AccountingProvider(ABC):
     def push_invoice(self, invoice: InvoiceDTO) -> str:
         """Faturayı muhasebe programına gönderir, oluşan kaydın external_id'sini döner."""
         ...
+
+    @abstractmethod
+    def cancel_invoice(self, external_id: str) -> None:
+        """Muhasebe programında daha önce oluşturulmuş bir faturayı iptal eder."""
+        ...

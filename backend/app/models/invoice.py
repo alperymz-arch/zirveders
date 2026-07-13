@@ -24,10 +24,13 @@ class Invoice(Base):
     total_amount: Mapped[float] = mapped_column(Float)
     currency: Mapped[str] = mapped_column(String(10), default="TRY")
     lines_json: Mapped[str] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(String(20))  # "sent" | "failed"
+    status: Mapped[str] = mapped_column(String(20))  # "sent" | "failed" | "cancelled"
     external_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+    # Soft delete: silinen faturalar DB'den kaldırılmaz, "silinenler kutusu"na
+    # taşınır (deleted_at doldurulur). Kalıcı silme sadece purge ile yapılır.
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

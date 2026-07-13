@@ -21,11 +21,18 @@ interface Invoice {
   status: string
   error_message: string | null
   created_at: string
+  deleted_at: string | null
+}
+
+interface CurrentUser {
+  role: string
 }
 
 export default function Invoices() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [trash, setTrash] = useState<Invoice[]>([])
+  const [isAdmin, setIsAdmin] = useState(false)
   const [customerId, setCustomerId] = useState('')
   const [referenceNo, setReferenceNo] = useState('')
   const [lines, setLines] = useState<InvoiceLine[]>([{ aciklama: '', tutar: 0 }])
@@ -41,9 +48,19 @@ export default function Invoices() {
     apiFetch('/accounting/invoices').then(setInvoices).catch(() => setInvoices([]))
   }
 
+  function loadTrash() {
+    apiFetch('/accounting/invoices/trash').then(setTrash).catch(() => setTrash([]))
+  }
+
   useEffect(() => {
     loadCustomers()
     loadInvoices()
+    apiFetch('/users/me')
+      .then((me: CurrentUser) => {
+        setIsAdmin(me.role === 'admin')
+        if (me.role === 'admin') loadTrash()
+      })
+      .catch(() => setIsAdmin(false))
   }, [])
 
   function updateLine(index: number, field: keyof InvoiceLine, value: string) {
@@ -88,6 +105,56 @@ export default function Invoices() {
     } finally {
       setSaving(false)
     }
+  }
+
+  async function handleCancel(id: number) {
+    setError(null)
+    try {
+      await apiFetch(`/accounting/invoices/${id}/cancel`, { method: 'POST' })
+      loadInvoices()
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
+  async function handleDelete(id: number) {
+    if (!window.confirm('Fatura silinenler kutusuna taşınacak, emin misin?')) return
+    setError(null)
+    try {
+      await apiFetch(`/accounting/invoices/${id}`, { method: 'DELETE' })
+      loadInvoices()
+      loadTrash()
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
+  async function handleRestore(id: number) {
+    setError(null)
+    try {
+      await apiFetch(`/accounting/invoices/${id}/restore`, { method: 'POST' })
+      loadInvoices()
+      loadTrash()
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
+  async function handlePurge(id: number) {
+    if (!window.confirm('Bu fatura kalıcı olarak silinecek, geri alınamaz. Emin misin?')) return
+    setError(null)
+    try {
+      await apiFetch(`/accounting/invoices/${id}/purge`, { method: 'DELETE' })
+      loadTrash()
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
+  function statusLabel(inv: Invoice) {
+    if (inv.status === 'sent') return 'Gönderildi'
+    if (inv.status === 'cancelled') return 'İptal edildi'
+    return `Hata${inv.error_message ? `: ${inv.error_message}` : ''}`
   }
 
   return (
@@ -155,11 +222,29 @@ export default function Invoices() {
         {invoices.map((inv) => (
           <li key={inv.id}>
             {inv.reference_no} — {inv.customer_name} — {inv.total_amount} {inv.currency} —{' '}
-            {inv.status === 'sent' ? 'Gönderildi' : 'Hata'}
-            {inv.status === 'failed' && inv.error_message ? `: ${inv.error_message}` : ''}
+            {statusLabel(inv)}{' '}
+            {inv.status !== 'cancelled' && (
+              <button onClick={() => handleCancel(inv.id)}>İptal Et</button>
+            )}
+            {isAdmin && <button onClick={() => handleDelete(inv.id)}>Sil</button>}
           </li>
         ))}
       </ul>
+
+      {isAdmin && (
+        <>
+          <h2>Silinenler</h2>
+          <ul>
+            {trash.map((inv) => (
+              <li key={inv.id}>
+                {inv.reference_no} — {inv.customer_name} — {inv.total_amount} {inv.currency}{' '}
+                <button onClick={() => handleRestore(inv.id)}>Geri Yükle</button>
+                <button onClick={() => handlePurge(inv.id)}>Kalıcı Olarak Sil</button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   )
 }
