@@ -225,3 +225,96 @@ def test_purge_permanently_removes(client, db_session):
 
     trash = client.get("/api/accounting/invoices/trash", headers=headers).json()
     assert all(inv["id"] != invoice.id for inv in trash)
+
+
+def test_update_failed_invoice_lines_resends_successfully(client, db_session):
+    headers = _auth_headers(client, db_session, "editlines1@example.com")
+    invoice = _create_failed_invoice(db_session, "EDIT-1")
+
+    response = client.put(
+        f"/api/accounting/invoices/{invoice.id}",
+        json={"lines": [{"aciklama": "Düzeltilmiş kalem", "tutar": 75}]},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "sent"
+    assert data["total_amount"] == 75
+    assert data["lines"] == [{"aciklama": "Düzeltilmiş kalem", "tutar": 75}]
+    assert data["external_id"].startswith("MOCK-INV-")
+
+
+def test_update_sent_invoice_rejected(client, db_session):
+    headers = _auth_headers(client, db_session, "editlines2@example.com")
+    created = client.post(
+        "/api/accounting/invoices",
+        json={"customer_external_id": "C001", "lines": [{"aciklama": "x", "tutar": 20}]},
+        headers=headers,
+    ).json()
+
+    response = client.put(
+        f"/api/accounting/invoices/{created['id']}",
+        json={"lines": [{"aciklama": "y", "tutar": 30}]},
+        headers=headers,
+    )
+    assert response.status_code == 409
+
+
+def test_update_cancelled_invoice_rejected(client, db_session):
+    headers = _auth_headers(client, db_session, "editlines3@example.com")
+    created = client.post(
+        "/api/accounting/invoices",
+        json={"customer_external_id": "C001", "lines": [{"aciklama": "x", "tutar": 20}]},
+        headers=headers,
+    ).json()
+    client.post(f"/api/accounting/invoices/{created['id']}/cancel", headers=headers)
+
+    response = client.put(
+        f"/api/accounting/invoices/{created['id']}",
+        json={"lines": [{"aciklama": "y", "tutar": 30}]},
+        headers=headers,
+    )
+    assert response.status_code == 409
+
+
+def test_update_deleted_invoice_rejected(client, db_session):
+    headers = _admin_headers(client, db_session, "editlines-admin@example.com")
+    invoice = _create_failed_invoice(db_session, "EDIT-2")
+    client.delete(f"/api/accounting/invoices/{invoice.id}", headers=headers)
+
+    response = client.put(
+        f"/api/accounting/invoices/{invoice.id}",
+        json={"lines": [{"aciklama": "y", "tutar": 30}]},
+        headers=headers,
+    )
+    assert response.status_code == 409
+
+
+def test_update_invoice_requires_at_least_one_line(client, db_session):
+    headers = _auth_headers(client, db_session, "editlines4@example.com")
+    invoice = _create_failed_invoice(db_session, "EDIT-3")
+
+    response = client.put(
+        f"/api/accounting/invoices/{invoice.id}",
+        json={"lines": []},
+        headers=headers,
+    )
+    assert response.status_code == 422
+
+
+def test_update_invoice_not_found(client, db_session):
+    headers = _auth_headers(client, db_session, "editlines5@example.com")
+
+    response = client.put(
+        "/api/accounting/invoices/9999",
+        json={"lines": [{"aciklama": "y", "tutar": 30}]},
+        headers=headers,
+    )
+    assert response.status_code == 404
+
+
+def test_update_invoice_requires_auth(client):
+    response = client.put(
+        "/api/accounting/invoices/1", json={"lines": [{"aciklama": "y", "tutar": 30}]}
+    )
+    assert response.status_code == 401

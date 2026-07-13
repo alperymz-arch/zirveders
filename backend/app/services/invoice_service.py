@@ -10,6 +10,47 @@ from app.models.invoice import Invoice
 from app.models.user import User
 
 
+def _attempt_push(
+    db: Session,
+    provider: AccountingProvider,
+    user: User,
+    invoice: Invoice,
+    lines: list[dict],
+    action: str,
+) -> Invoice:
+    dto = InvoiceDTO(
+        reference_no=invoice.reference_no,
+        customer_external_id=invoice.customer_external_id,
+        total_amount=invoice.total_amount,
+        currency=invoice.currency,
+        lines=lines,
+    )
+
+    try:
+        external_id = provider.push_invoice(dto)
+        invoice.status = "sent"
+        invoice.external_id = external_id
+        invoice.error_message = None
+        result = "success"
+    except Exception as exc:  # noqa: BLE001 -- harici muhasebe programı hatası kullanıcıya net gösterilmeli
+        invoice.status = "failed"
+        invoice.error_message = str(exc)
+        result = "failure"
+
+    db.add(
+        AuditLog(
+            user_id=user.id,
+            action=action,
+            target=invoice.reference_no,
+            payload=json.dumps(lines),
+            result=result,
+        )
+    )
+    db.commit()
+    db.refresh(invoice)
+    return invoice
+
+
 def create_and_send_invoice(
     db: Session,
     provider: AccountingProvider,
@@ -52,37 +93,28 @@ def create_and_send_invoice(
     else:
         invoice = existing
 
-    dto = InvoiceDTO(
-        reference_no=reference_no,
-        customer_external_id=customer_external_id,
-        total_amount=total_amount,
-        currency=currency,
-        lines=lines,
-    )
+    return _attempt_push(db, provider, user, invoice, lines, action="push_invoice")
 
-    try:
-        external_id = provider.push_invoice(dto)
-        invoice.status = "sent"
-        invoice.external_id = external_id
-        invoice.error_message = None
-        result = "success"
-    except Exception as exc:  # noqa: BLE001 -- harici muhasebe programı hatası kullanıcıya net gösterilmeli
-        invoice.status = "failed"
-        invoice.error_message = str(exc)
-        result = "failure"
 
-    db.add(
-        AuditLog(
-            user_id=user.id,
-            action="push_invoice",
-            target=reference_no,
-            payload=json.dumps(lines),
-            result=result,
-        )
-    )
+def update_invoice_lines(
+    db: Session,
+    provider: AccountingProvider,
+    user: User,
+    invoice: Invoice,
+    lines: list[dict],
+) -> Invoice:
+    """Fatura kalemlerini günceller ve muhasebe programına yeniden göndermeyi dener.
+
+    Sadece "failed" faturalar için çağrılmalı — çağıran (API katmanı) bunu
+    zorunlu kılar. Gönderilmiş bir faturanın kalemleri sessizce değiştirilmez
+    (bkz. CLAUDE.md -> Muhasebe Entegrasyon Kuralları).
+    """
+    invoice.lines_json = json.dumps(lines)
+    invoice.total_amount = sum(line["tutar"] for line in lines)
     db.commit()
     db.refresh(invoice)
-    return invoice
+
+    return _attempt_push(db, provider, user, invoice, lines, action="update_invoice")
 
 
 def cancel_invoice_record(

@@ -12,13 +12,14 @@ from app.models.audit_log import AuditLog
 from app.models.invoice import Invoice
 from app.models.user import User
 from app.schemas.customer import CustomerCreate, CustomerUpdate
-from app.schemas.invoice import InvoiceCreate, InvoiceLineOut, InvoiceOut
+from app.schemas.invoice import InvoiceCreate, InvoiceLineOut, InvoiceLinesUpdate, InvoiceOut
 from app.services.invoice_service import (
     cancel_invoice_record,
     create_and_send_invoice,
     purge_invoice,
     restore_invoice,
     soft_delete_invoice,
+    update_invoice_lines,
 )
 
 router = APIRouter(prefix="/accounting", tags=["accounting"])
@@ -179,6 +180,39 @@ def create_invoice(
                 f"Fatura muhasebe programına gönderilemedi "
                 f"(referans: {invoice.reference_no}): {invoice.error_message}"
             ),
+        )
+    return out
+
+
+@router.put("/invoices/{invoice_id}", response_model=InvoiceOut)
+def update_invoice(
+    invoice_id: int,
+    payload: InvoiceLinesUpdate,
+    provider: AccountingProvider = Depends(get_accounting_provider),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> InvoiceOut:
+    invoice = _get_invoice_or_404(db, invoice_id)
+    if invoice.deleted_at is not None:
+        raise HTTPException(status_code=409, detail="Fatura silinenler kutusunda, önce geri yükleyin")
+    if invoice.status != "failed":
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Sadece gönderilememiş faturaların kalemleri düzenlenebilir; "
+                "gönderilmiş bir faturayı düzeltmek için önce iptal edip yeni fatura oluşturun"
+            ),
+        )
+
+    invoice = update_invoice_lines(
+        db, provider, current_user, invoice, [line.model_dump() for line in payload.lines]
+    )
+
+    out = _to_invoice_out(invoice)
+    if invoice.status == "failed":
+        raise HTTPException(
+            status_code=502,
+            detail=f"Fatura yine gönderilemedi (referans: {invoice.reference_no}): {invoice.error_message}",
         )
     return out
 

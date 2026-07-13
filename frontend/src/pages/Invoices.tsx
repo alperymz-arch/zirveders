@@ -18,6 +18,7 @@ interface Invoice {
   customer_name: string
   total_amount: number
   currency: string
+  lines: InvoiceLine[]
   status: string
   error_message: string | null
   created_at: string
@@ -39,6 +40,8 @@ export default function Invoices() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null)
+  const [editingLines, setEditingLines] = useState<InvoiceLine[]>([])
 
   function loadCustomers() {
     apiFetch('/accounting/customers').then(setCustomers).catch(() => setCustomers([]))
@@ -151,6 +154,42 @@ export default function Invoices() {
     }
   }
 
+  function startEditLines(inv: Invoice) {
+    setEditingInvoiceId(inv.id)
+    setEditingLines(inv.lines.map((line) => ({ ...line })))
+  }
+
+  function updateEditingLine(index: number, field: keyof InvoiceLine, value: string) {
+    setEditingLines((prev) =>
+      prev.map((line, i) =>
+        i === index ? { ...line, [field]: field === 'tutar' ? Number(value) : value } : line,
+      ),
+    )
+  }
+
+  function addEditingLine() {
+    setEditingLines((prev) => [...prev, { aciklama: '', tutar: 0 }])
+  }
+
+  function removeEditingLine(index: number) {
+    setEditingLines((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  async function handleSaveLines(id: number) {
+    setError(null)
+    try {
+      await apiFetch(`/accounting/invoices/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lines: editingLines }),
+      })
+      setEditingInvoiceId(null)
+      loadInvoices()
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
   function statusLabel(inv: Invoice) {
     if (inv.status === 'sent') return 'Gönderildi'
     if (inv.status === 'cancelled') return 'İptal edildi'
@@ -219,16 +258,49 @@ export default function Invoices() {
 
       <h2>Gönderilen Faturalar</h2>
       <ul>
-        {invoices.map((inv) => (
-          <li key={inv.id}>
-            {inv.reference_no} — {inv.customer_name} — {inv.total_amount} {inv.currency} —{' '}
-            {statusLabel(inv)}{' '}
-            {inv.status !== 'cancelled' && (
-              <button onClick={() => handleCancel(inv.id)}>İptal Et</button>
-            )}
-            {isAdmin && <button onClick={() => handleDelete(inv.id)}>Sil</button>}
-          </li>
-        ))}
+        {invoices.map((inv) =>
+          editingInvoiceId === inv.id ? (
+            <li key={inv.id}>
+              <strong>{inv.reference_no}</strong> kalemlerini düzenle:
+              {editingLines.map((line, i) => (
+                <div key={i}>
+                  <input
+                    type="text"
+                    placeholder="Açıklama"
+                    value={line.aciklama}
+                    onChange={(e) => updateEditingLine(i, 'aciklama', e.target.value)}
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    placeholder="Tutar"
+                    value={line.tutar || ''}
+                    onChange={(e) => updateEditingLine(i, 'tutar', e.target.value)}
+                  />
+                  {editingLines.length > 1 && (
+                    <button onClick={() => removeEditingLine(i)}>Sil</button>
+                  )}
+                </div>
+              ))}
+              <button onClick={addEditingLine}>+ Kalem Ekle</button>
+              <button onClick={() => handleSaveLines(inv.id)}>Kaydet ve Yeniden Gönder</button>
+              <button onClick={() => setEditingInvoiceId(null)}>Vazgeç</button>
+            </li>
+          ) : (
+            <li key={inv.id}>
+              {inv.reference_no} — {inv.customer_name} — {inv.total_amount} {inv.currency} —{' '}
+              {statusLabel(inv)}{' '}
+              {inv.status !== 'cancelled' && (
+                <button onClick={() => handleCancel(inv.id)}>İptal Et</button>
+              )}
+              {inv.status === 'failed' && (
+                <button onClick={() => startEditLines(inv)}>Kalemleri Düzenle</button>
+              )}
+              {isAdmin && <button onClick={() => handleDelete(inv.id)}>Sil</button>}
+            </li>
+          ),
+        )}
       </ul>
 
       {isAdmin && (

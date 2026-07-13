@@ -15,6 +15,10 @@ class InvoiceCreate(BaseModel):
     lines: list[InvoiceLineIn] = Field(min_length=1)
 
 
+class InvoiceLinesUpdate(BaseModel):
+    lines: list[InvoiceLineIn] = Field(min_length=1)
+
+
 class InvoiceLineOut(BaseModel):
     aciklama: str
     tutar: float
