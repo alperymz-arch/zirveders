@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { apiFetch, logout } from '../api/client'
-import { useAuth } from '../context/AuthContext'
+import Layout from '../components/Layout'
+import { apiFetch } from '../api/client'
 
 interface Customer {
   external_id: string
@@ -19,20 +18,12 @@ export default function Dashboard() {
   const [newTaxNumber, setNewTaxNumber] = useState('')
   const [newExternalId, setNewExternalId] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const { setIsAuthenticated } = useAuth()
-  const navigate = useNavigate()
 
   function loadCustomers() {
     apiFetch('/accounting/customers').then(setCustomers).catch(() => setCustomers([]))
   }
 
   useEffect(loadCustomers, [])
-
-  function handleLogout() {
-    logout()
-    setIsAuthenticated(false)
-    navigate('/login')
-  }
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault()
@@ -78,14 +69,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div>
-      <header>
-        <h1>Muhasebe Entegrasyon</h1>
-        <Link to="/invoices">Faturalar</Link>
-        <Link to="/settings">Ayarlar</Link>
-        <button onClick={handleLogout}>Çıkış</button>
-      </header>
-
+    <Layout>
       <h2>Müşteriler</h2>
       {error && <p role="alert">{error}</p>}
       <ul>
@@ -133,6 +117,6 @@ export default function Dashboard() {
         />
         <button type="submit">Ekle</button>
       </form>
-    </div>
+    </Layout>
   )
 }

@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { apiFetch } from '../api/client'
+import Layout from '../components/Layout'
 
 interface AccountingSettings {
   configured: boolean
@@ -43,7 +44,7 @@ export default function Settings() {
   }
 
   return (
-    <div>
+    <Layout>
       <h1>Muhasebe Ayarları</h1>
       <p>
         Zirve entegrasyonu ZirAPI üzerinden çalışır. Kendi ZirAPI hesabınızdan
@@ -73,6 +74,6 @@ export default function Settings() {
         {error && <p role="alert">{error}</p>}
         {success && <p>{success}</p>}
       </form>
-    </div>
+    </Layout>
   )
 }

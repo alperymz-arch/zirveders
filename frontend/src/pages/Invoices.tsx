@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { apiFetch } from '../api/client'
+import Layout from '../components/Layout'
 
 interface Customer {
   external_id: string
@@ -197,7 +198,7 @@ export default function Invoices() {
   }
 
   return (
-    <div>
+    <Layout>
       <h1>Fatura Girişi</h1>
 
       <form onSubmit={handleSubmit}>
@@ -317,6 +318,6 @@ export default function Invoices() {
           </ul>
         </>
       )}
-    </div>
+    </Layout>
   )
 }
