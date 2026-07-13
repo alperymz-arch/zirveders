@@ -23,24 +23,28 @@ export default function Login() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div className="card" style={{ maxWidth: 360, margin: '80px auto' }}>
       <h1>Giriş Yap</h1>
-      <input
-        type="email"
-        placeholder="E-posta"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
-      <input
-        type="password"
-        placeholder="Şifre"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
-      <button type="submit">Giriş</button>
-      {error && <p role="alert">{error}</p>}
-    </form>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          placeholder="E-posta"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Şifre"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <button className="btn btn-primary" type="submit">
+          Giriş
+        </button>
+      </form>
+      {error && <p className="alert alert-error">{error}</p>}
+    </div>
   )
 }

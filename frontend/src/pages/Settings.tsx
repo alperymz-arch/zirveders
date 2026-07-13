@@ -60,7 +60,7 @@ export default function Settings() {
             : 'Tanımlı değil'}
       </p>
 
-      <form onSubmit={handleSubmit}>
+      <form className="card" onSubmit={handleSubmit}>
         <input
           type="password"
           placeholder="ZirAPI anahtarı"
@@ -68,11 +68,11 @@ export default function Settings() {
           onChange={(e) => setApiKey(e.target.value)}
           required
         />
-        <button type="submit" disabled={saving}>
+        <button className="btn btn-primary" type="submit" disabled={saving}>
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
         </button>
-        {error && <p role="alert">{error}</p>}
-        {success && <p>{success}</p>}
+        {error && <p className="alert alert-error">{error}</p>}
+        {success && <p className="alert alert-success">{success}</p>}
       </form>
     </Layout>
   )

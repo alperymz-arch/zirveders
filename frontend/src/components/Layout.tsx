@@ -15,14 +15,16 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div>
-      <header>
+      <header className="app-header">
         <h1>Muhasebe Entegrasyon</h1>
-        <nav>
+        <nav className="app-nav">
           <Link to="/">Müşteriler</Link>
           <Link to="/invoices">Faturalar</Link>
           <Link to="/settings">Ayarlar</Link>
         </nav>
-        <button onClick={handleLogout}>Çıkış</button>
+        <button className="btn btn-secondary" onClick={handleLogout}>
+          Çıkış
+        </button>
       </header>
       {children}
     </div>

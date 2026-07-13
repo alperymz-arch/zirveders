@@ -197,11 +197,17 @@ export default function Invoices() {
     return `Hata${inv.error_message ? `: ${inv.error_message}` : ''}`
   }
 
+  function statusBadgeClass(inv: Invoice) {
+    if (inv.status === 'sent') return 'badge-sent'
+    if (inv.status === 'cancelled') return 'badge-cancelled'
+    return 'badge-failed'
+  }
+
   return (
     <Layout>
       <h1>Fatura Girişi</h1>
 
-      <form onSubmit={handleSubmit}>
+      <form className="card" onSubmit={handleSubmit}>
         <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} required>
           <option value="">Müşteri seçin</option>
           {customers.map((c) => (
@@ -218,9 +224,9 @@ export default function Invoices() {
           onChange={(e) => setReferenceNo(e.target.value)}
         />
 
-        <h2>Kalemler</h2>
+        <h2 style={{ width: '100%' }}>Kalemler</h2>
         {lines.map((line, i) => (
-          <div key={i}>
+          <div className="line-row" key={i}>
             <input
               type="text"
               placeholder="Açıklama"
@@ -238,33 +244,33 @@ export default function Invoices() {
               required
             />
             {lines.length > 1 && (
-              <button type="button" onClick={() => removeLine(i)}>
+              <button className="btn btn-secondary btn-small" type="button" onClick={() => removeLine(i)}>
                 Sil
               </button>
             )}
           </div>
         ))}
-        <button type="button" onClick={addLine}>
+        <button className="btn btn-secondary" type="button" onClick={addLine}>
           + Kalem Ekle
         </button>
 
-        <p>Toplam: {total.toFixed(2)} TL</p>
+        <p style={{ width: '100%', margin: 0 }}>Toplam: {total.toFixed(2)} TL</p>
 
-        <button type="submit" disabled={saving}>
+        <button className="btn btn-primary" type="submit" disabled={saving}>
           {saving ? 'Gönderiliyor...' : 'Faturayı Gönder'}
         </button>
-        {error && <p role="alert">{error}</p>}
-        {success && <p>{success}</p>}
+        {error && <p className="alert alert-error">{error}</p>}
+        {success && <p className="alert alert-success">{success}</p>}
       </form>
 
       <h2>Gönderilen Faturalar</h2>
-      <ul>
+      <ul className="list card">
         {invoices.map((inv) =>
           editingInvoiceId === inv.id ? (
-            <li key={inv.id}>
+            <li className="list-item" key={inv.id}>
               <strong>{inv.reference_no}</strong> kalemlerini düzenle:
               {editingLines.map((line, i) => (
-                <div key={i}>
+                <div className="line-row" key={i}>
                   <input
                     type="text"
                     placeholder="Açıklama"
@@ -280,25 +286,47 @@ export default function Invoices() {
                     onChange={(e) => updateEditingLine(i, 'tutar', e.target.value)}
                   />
                   {editingLines.length > 1 && (
-                    <button onClick={() => removeEditingLine(i)}>Sil</button>
+                    <button className="btn btn-secondary btn-small" onClick={() => removeEditingLine(i)}>
+                      Sil
+                    </button>
                   )}
                 </div>
               ))}
-              <button onClick={addEditingLine}>+ Kalem Ekle</button>
-              <button onClick={() => handleSaveLines(inv.id)}>Kaydet ve Yeniden Gönder</button>
-              <button onClick={() => setEditingInvoiceId(null)}>Vazgeç</button>
+              <div className="list-item-actions">
+                <button className="btn btn-secondary" onClick={addEditingLine}>
+                  + Kalem Ekle
+                </button>
+                <button className="btn btn-primary" onClick={() => handleSaveLines(inv.id)}>
+                  Kaydet ve Yeniden Gönder
+                </button>
+                <button className="btn btn-secondary" onClick={() => setEditingInvoiceId(null)}>
+                  Vazgeç
+                </button>
+              </div>
             </li>
           ) : (
-            <li key={inv.id}>
-              {inv.reference_no} — {inv.customer_name} — {inv.total_amount} {inv.currency} —{' '}
-              {statusLabel(inv)}{' '}
-              {inv.status !== 'cancelled' && (
-                <button onClick={() => handleCancel(inv.id)}>İptal Et</button>
-              )}
-              {inv.status === 'failed' && (
-                <button onClick={() => startEditLines(inv)}>Kalemleri Düzenle</button>
-              )}
-              {isAdmin && <button onClick={() => handleDelete(inv.id)}>Sil</button>}
+            <li className="list-item" key={inv.id}>
+              <span className="list-item-main">
+                {inv.reference_no} — {inv.customer_name} — {inv.total_amount} {inv.currency}{' '}
+                <span className={`badge ${statusBadgeClass(inv)}`}>{statusLabel(inv)}</span>
+              </span>
+              <div className="list-item-actions">
+                {inv.status !== 'cancelled' && (
+                  <button className="btn btn-secondary" onClick={() => handleCancel(inv.id)}>
+                    İptal Et
+                  </button>
+                )}
+                {inv.status === 'failed' && (
+                  <button className="btn btn-secondary" onClick={() => startEditLines(inv)}>
+                    Kalemleri Düzenle
+                  </button>
+                )}
+                {isAdmin && (
+                  <button className="btn btn-danger" onClick={() => handleDelete(inv.id)}>
+                    Sil
+                  </button>
+                )}
+              </div>
             </li>
           ),
         )}
@@ -307,12 +335,20 @@ export default function Invoices() {
       {isAdmin && (
         <>
           <h2>Silinenler</h2>
-          <ul>
+          <ul className="list card">
             {trash.map((inv) => (
-              <li key={inv.id}>
-                {inv.reference_no} — {inv.customer_name} — {inv.total_amount} {inv.currency}{' '}
-                <button onClick={() => handleRestore(inv.id)}>Geri Yükle</button>
-                <button onClick={() => handlePurge(inv.id)}>Kalıcı Olarak Sil</button>
+              <li className="list-item" key={inv.id}>
+                <span className="list-item-main">
+                  {inv.reference_no} — {inv.customer_name} — {inv.total_amount} {inv.currency}
+                </span>
+                <div className="list-item-actions">
+                  <button className="btn btn-secondary" onClick={() => handleRestore(inv.id)}>
+                    Geri Yükle
+                  </button>
+                  <button className="btn btn-danger" onClick={() => handlePurge(inv.id)}>
+                    Kalıcı Olarak Sil
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

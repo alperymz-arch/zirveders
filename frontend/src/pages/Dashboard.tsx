@@ -71,31 +71,41 @@ export default function Dashboard() {
   return (
     <Layout>
       <h2>Müşteriler</h2>
-      {error && <p role="alert">{error}</p>}
-      <ul>
+      {error && <p className="alert alert-error">{error}</p>}
+      <ul className="list card">
         {customers.map((c) =>
           editingId === c.external_id ? (
-            <li key={c.external_id}>
+            <li className="list-item" key={c.external_id}>
               <input value={editName} onChange={(e) => setEditName(e.target.value)} />
               <input
                 value={editTaxNumber}
                 onChange={(e) => setEditTaxNumber(e.target.value)}
                 placeholder="VKN/TCKN"
               />
-              <button onClick={() => handleUpdate(c.external_id)}>Kaydet</button>
-              <button onClick={() => setEditingId(null)}>Vazgeç</button>
+              <div className="list-item-actions">
+                <button className="btn btn-primary" onClick={() => handleUpdate(c.external_id)}>
+                  Kaydet
+                </button>
+                <button className="btn btn-secondary" onClick={() => setEditingId(null)}>
+                  Vazgeç
+                </button>
+              </div>
             </li>
           ) : (
-            <li key={c.external_id}>
-              {c.name} — {c.balance} TL
-              <button onClick={() => startEdit(c)}>Düzenle</button>
+            <li className="list-item" key={c.external_id}>
+              <span className="list-item-main">
+                {c.name} — {c.balance} TL
+              </span>
+              <button className="btn btn-secondary" onClick={() => startEdit(c)}>
+                Düzenle
+              </button>
             </li>
           ),
         )}
       </ul>
 
       <h3>Yeni Müşteri</h3>
-      <form onSubmit={handleCreate}>
+      <form className="card" onSubmit={handleCreate}>
         <input
           type="text"
           placeholder="Müşteri adı"
@@ -115,7 +125,9 @@ export default function Dashboard() {
           value={newExternalId}
           onChange={(e) => setNewExternalId(e.target.value)}
         />
-        <button type="submit">Ekle</button>
+        <button className="btn btn-primary" type="submit">
+          Ekle
+        </button>
       </form>
     </Layout>
   )
