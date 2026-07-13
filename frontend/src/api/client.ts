@@ -12,7 +12,8 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
   }
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers })
   if (!response.ok) {
-    throw new Error(`API hatası: ${response.status}`)
+    const body = await response.json().catch(() => null)
+    throw new Error(body?.detail ?? `API hatası: ${response.status}`)
   }
   return response.json()
 }

@@ -30,6 +30,7 @@ export default function Dashboard() {
     <div>
       <header>
         <h1>Muhasebe Entegrasyon</h1>
+        <Link to="/invoices">Faturalar</Link>
         <Link to="/settings">Ayarlar</Link>
         <button onClick={handleLogout}>Çıkış</button>
       </header>

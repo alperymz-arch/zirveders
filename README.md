@@ -78,3 +78,8 @@ Muhasebe programı entegrasyonu **Zirve**, **ZirAPI** (zirapi.com) üzerinden
 anahtarını `/settings` sayfasından girer — gerçek endpoint/alan adları henüz
 teyit edilmedi (TODO olarak işaretli). Geliştirme sırasında `mock` adapter
 kullanılabilir (`ACCOUNTING_PROVIDER=mock`). Bkz. CLAUDE.md → "Açık Kararlar".
+
+`/invoices` sayfasından fatura girilip muhasebe programına gönderilebiliyor:
+müşteri seçimi, çok satırlı kalem girişi, otomatik/manuel referans no ile
+idempotent gönderim ve geçmiş fatura listesi (`backend/app/api/routes/accounting.py`,
+`backend/app/services/invoice_service.py`).

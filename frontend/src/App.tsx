@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Dashboard from './pages/Dashboard'
+import Invoices from './pages/Invoices'
 import Login from './pages/Login'
 import Settings from './pages/Settings'
 
@@ -26,6 +27,14 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <Settings />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/invoices"
+        element={
+          <PrivateRoute>
+            <Invoices />
           </PrivateRoute>
         }
       />
