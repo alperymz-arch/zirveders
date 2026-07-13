@@ -33,6 +33,11 @@ class AccountingProvider(ABC):
     def get_customer(self, external_id: str) -> CustomerDTO | None: ...
 
     @abstractmethod
+    def push_customer(self, customer: CustomerDTO) -> str:
+        """Müşteriyi (cari hesabı) oluşturur veya günceller, external_id döner."""
+        ...
+
+    @abstractmethod
     def push_invoice(self, invoice: InvoiceDTO) -> str:
         """Faturayı muhasebe programına gönderir, oluşan kaydın external_id'sini döner."""
         ...

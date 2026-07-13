@@ -68,6 +68,15 @@ class ZirveAccountingProvider(AccountingProvider):
                 return customer
         return None
 
+    def push_customer(self, customer: CustomerDTO) -> str:
+        # TODO: gerçek endpoint path'i ve gövde alan adları teyit edilecek (örn. /cari).
+        payload = {"kod": customer.external_id, "unvan": customer.name, "vkn": customer.tax_number}
+        with self._client() as client:
+            response = client.post("/cari", json=payload)
+            response.raise_for_status()
+            data = response.json()
+        return data.get("kod", customer.external_id)
+
     def push_invoice(self, invoice: InvoiceDTO) -> str:
         # TODO: gerçek endpoint path'i ve gövde alan adları teyit edilecek (örn. /fatura).
         payload = {

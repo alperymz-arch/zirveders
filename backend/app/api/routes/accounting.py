@@ -1,4 +1,5 @@
 import json
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -7,8 +8,10 @@ from app.accounting import get_accounting_provider
 from app.accounting.base import AccountingProvider, CustomerDTO
 from app.api.deps import get_current_user, require_admin
 from app.core.db import get_db
+from app.models.audit_log import AuditLog
 from app.models.invoice import Invoice
 from app.models.user import User
+from app.schemas.customer import CustomerCreate, CustomerUpdate
 from app.schemas.invoice import InvoiceCreate, InvoiceLineOut, InvoiceOut
 from app.services.invoice_service import (
     cancel_invoice_record,
@@ -27,6 +30,71 @@ def list_customers(
     _: User = Depends(get_current_user),
 ) -> list[CustomerDTO]:
     return provider.get_customers()
+
+
+def _push_customer_logged(
+    provider: AccountingProvider, db: Session, user: User, dto: CustomerDTO
+) -> CustomerDTO:
+    try:
+        provider.push_customer(dto)
+        result = "success"
+    except Exception as exc:  # noqa: BLE001 -- harici muhasebe programı hatası kullanıcıya net gösterilmeli
+        db.add(
+            AuditLog(
+                user_id=user.id,
+                action="push_customer",
+                target=dto.external_id,
+                payload=dto.model_dump_json(),
+                result="failure",
+            )
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=502,
+            detail=f"Müşteri muhasebe programına kaydedilemedi ({dto.external_id}): {exc}",
+        ) from exc
+
+    db.add(
+        AuditLog(
+            user_id=user.id,
+            action="push_customer",
+            target=dto.external_id,
+            payload=dto.model_dump_json(),
+            result=result,
+        )
+    )
+    db.commit()
+    return provider.get_customer(dto.external_id) or dto
+
+
+@router.post("/customers", response_model=CustomerDTO)
+def create_customer(
+    payload: CustomerCreate,
+    provider: AccountingProvider = Depends(get_accounting_provider),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CustomerDTO:
+    external_id = payload.external_id or f"WEB-{uuid.uuid4().hex[:8]}"
+    if provider.get_customer(external_id) is not None:
+        raise HTTPException(status_code=409, detail="Bu müşteri kodu zaten kullanılıyor")
+
+    dto = CustomerDTO(external_id=external_id, name=payload.name, tax_number=payload.tax_number)
+    return _push_customer_logged(provider, db, current_user, dto)
+
+
+@router.put("/customers/{external_id}", response_model=CustomerDTO)
+def update_customer(
+    external_id: str,
+    payload: CustomerUpdate,
+    provider: AccountingProvider = Depends(get_accounting_provider),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CustomerDTO:
+    if provider.get_customer(external_id) is None:
+        raise HTTPException(status_code=404, detail="Müşteri bulunamadı")
+
+    dto = CustomerDTO(external_id=external_id, name=payload.name, tax_number=payload.tax_number)
+    return _push_customer_logged(provider, db, current_user, dto)
 
 
 def _to_invoice_out(invoice: Invoice) -> InvoiceOut:

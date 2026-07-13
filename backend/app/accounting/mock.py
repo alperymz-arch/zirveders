@@ -18,6 +18,17 @@ class MockAccountingProvider(AccountingProvider):
     def get_customer(self, external_id: str) -> CustomerDTO | None:
         return self._customers.get(external_id)
 
+    def push_customer(self, customer: CustomerDTO) -> str:
+        existing = self._customers.get(customer.external_id)
+        balance = existing.balance if existing else 0.0
+        self._customers[customer.external_id] = CustomerDTO(
+            external_id=customer.external_id,
+            name=customer.name,
+            tax_number=customer.tax_number,
+            balance=balance,
+        )
+        return customer.external_id
+
     def push_invoice(self, invoice: InvoiceDTO) -> str:
         self._invoice_counter += 1
         return f"MOCK-INV-{self._invoice_counter:05d}"

@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.accounting import get_accounting_provider
 from app.core.db import Base, get_db
 from app.main import app
 
@@ -18,6 +19,17 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def _reset_accounting_provider():
+    # get_accounting_provider() @lru_cache ile process boyunca tek bir
+    # MockAccountingProvider paylaşır (uygulamada bu doğru davranış — gerçek
+    # bir dış sistemin durumunu simüler). Testler arasında bu paylaşılan
+    # durumun sızmaması için her testten önce/sonra cache temizlenir.
+    get_accounting_provider.cache_clear()
+    yield
+    get_accounting_provider.cache_clear()
 
 
 @pytest.fixture()
