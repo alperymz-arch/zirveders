@@ -16,6 +16,7 @@ interface InvoiceLine {
 interface Invoice {
   id: number
   reference_no: string
+  invoice_type: string
   customer_name: string
   total_amount: number
   currency: string
@@ -37,6 +38,7 @@ export default function Invoices() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [customerId, setCustomerId] = useState('')
   const [referenceNo, setReferenceNo] = useState('')
+  const [invoiceType, setInvoiceType] = useState('gelir')
   const [lines, setLines] = useState<InvoiceLine[]>([{ aciklama: '', tutar: 0 }])
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -97,6 +99,7 @@ export default function Invoices() {
         body: JSON.stringify({
           customer_external_id: customerId,
           reference_no: referenceNo || null,
+          invoice_type: invoiceType,
           lines,
         }),
       })
@@ -203,6 +206,99 @@ export default function Invoices() {
     return 'badge-failed'
   }
 
+  function renderInvoiceItem(inv: Invoice) {
+    if (editingInvoiceId === inv.id) {
+      return (
+        <li className="list-item" key={inv.id}>
+          <strong>{inv.reference_no}</strong> kalemlerini düzenle:
+          {editingLines.map((line, i) => (
+            <div className="line-row" key={i}>
+              <input
+                type="text"
+                placeholder="Açıklama"
+                value={line.aciklama}
+                onChange={(e) => updateEditingLine(i, 'aciklama', e.target.value)}
+              />
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="Tutar"
+                value={line.tutar || ''}
+                onChange={(e) => updateEditingLine(i, 'tutar', e.target.value)}
+              />
+              {editingLines.length > 1 && (
+                <button className="btn btn-secondary btn-small" onClick={() => removeEditingLine(i)}>
+                  Sil
+                </button>
+              )}
+            </div>
+          ))}
+          <div className="list-item-actions">
+            <button className="btn btn-secondary" onClick={addEditingLine}>
+              + Kalem Ekle
+            </button>
+            <button className="btn btn-primary" onClick={() => handleSaveLines(inv.id)}>
+              Kaydet ve Yeniden Gönder
+            </button>
+            <button className="btn btn-secondary" onClick={() => setEditingInvoiceId(null)}>
+              Vazgeç
+            </button>
+          </div>
+        </li>
+      )
+    }
+
+    return (
+      <li className="list-item" key={inv.id}>
+        <span className="list-item-main">
+          {inv.reference_no} — {inv.customer_name} — {inv.total_amount} {inv.currency}{' '}
+          <span className={`badge ${statusBadgeClass(inv)}`}>{statusLabel(inv)}</span>
+        </span>
+        <div className="list-item-actions">
+          {inv.status !== 'cancelled' && (
+            <button className="btn btn-secondary" onClick={() => handleCancel(inv.id)}>
+              İptal Et
+            </button>
+          )}
+          {inv.status === 'failed' && (
+            <button className="btn btn-secondary" onClick={() => startEditLines(inv)}>
+              Kalemleri Düzenle
+            </button>
+          )}
+          {isAdmin && (
+            <button className="btn btn-danger" onClick={() => handleDelete(inv.id)}>
+              Sil
+            </button>
+          )}
+        </div>
+      </li>
+    )
+  }
+
+  function renderTrashItem(inv: Invoice) {
+    return (
+      <li className="list-item" key={inv.id}>
+        <span className="list-item-main">
+          {inv.reference_no} — {inv.customer_name} — {inv.total_amount} {inv.currency}
+        </span>
+        <div className="list-item-actions">
+          <button className="btn btn-secondary" onClick={() => handleRestore(inv.id)}>
+            Geri Yükle
+          </button>
+          <button className="btn btn-danger" onClick={() => handlePurge(inv.id)}>
+            Kalıcı Olarak Sil
+          </button>
+        </div>
+      </li>
+    )
+  }
+
+  const gelirInvoices = invoices.filter((inv) => inv.invoice_type === 'gelir')
+  const giderInvoices = invoices.filter((inv) => inv.invoice_type === 'gider')
+  const gelirTrash = trash.filter((inv) => inv.invoice_type === 'gelir')
+  const giderTrash = trash.filter((inv) => inv.invoice_type === 'gider')
+
   return (
     <Layout>
       <h1>Fatura Girişi</h1>
@@ -215,6 +311,11 @@ export default function Invoices() {
               {c.name}
             </option>
           ))}
+        </select>
+
+        <select value={invoiceType} onChange={(e) => setInvoiceType(e.target.value)}>
+          <option value="gelir">Gelir</option>
+          <option value="gider">Gider</option>
         </select>
 
         <input
@@ -263,94 +364,30 @@ export default function Invoices() {
         {success && <p className="alert alert-success">{success}</p>}
       </form>
 
-      <h2>Gönderilen Faturalar</h2>
+      <h2>Gelir Faturaları</h2>
       <ul className="list card">
-        {invoices.map((inv) =>
-          editingInvoiceId === inv.id ? (
-            <li className="list-item" key={inv.id}>
-              <strong>{inv.reference_no}</strong> kalemlerini düzenle:
-              {editingLines.map((line, i) => (
-                <div className="line-row" key={i}>
-                  <input
-                    type="text"
-                    placeholder="Açıklama"
-                    value={line.aciklama}
-                    onChange={(e) => updateEditingLine(i, 'aciklama', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    placeholder="Tutar"
-                    value={line.tutar || ''}
-                    onChange={(e) => updateEditingLine(i, 'tutar', e.target.value)}
-                  />
-                  {editingLines.length > 1 && (
-                    <button className="btn btn-secondary btn-small" onClick={() => removeEditingLine(i)}>
-                      Sil
-                    </button>
-                  )}
-                </div>
-              ))}
-              <div className="list-item-actions">
-                <button className="btn btn-secondary" onClick={addEditingLine}>
-                  + Kalem Ekle
-                </button>
-                <button className="btn btn-primary" onClick={() => handleSaveLines(inv.id)}>
-                  Kaydet ve Yeniden Gönder
-                </button>
-                <button className="btn btn-secondary" onClick={() => setEditingInvoiceId(null)}>
-                  Vazgeç
-                </button>
-              </div>
-            </li>
-          ) : (
-            <li className="list-item" key={inv.id}>
-              <span className="list-item-main">
-                {inv.reference_no} — {inv.customer_name} — {inv.total_amount} {inv.currency}{' '}
-                <span className={`badge ${statusBadgeClass(inv)}`}>{statusLabel(inv)}</span>
-              </span>
-              <div className="list-item-actions">
-                {inv.status !== 'cancelled' && (
-                  <button className="btn btn-secondary" onClick={() => handleCancel(inv.id)}>
-                    İptal Et
-                  </button>
-                )}
-                {inv.status === 'failed' && (
-                  <button className="btn btn-secondary" onClick={() => startEditLines(inv)}>
-                    Kalemleri Düzenle
-                  </button>
-                )}
-                {isAdmin && (
-                  <button className="btn btn-danger" onClick={() => handleDelete(inv.id)}>
-                    Sil
-                  </button>
-                )}
-              </div>
-            </li>
-          ),
-        )}
+        {gelirInvoices.length === 0 && <li className="list-item">Henüz gelir faturası yok.</li>}
+        {gelirInvoices.map(renderInvoiceItem)}
+      </ul>
+
+      <h2>Gider Faturaları</h2>
+      <ul className="list card">
+        {giderInvoices.length === 0 && <li className="list-item">Henüz gider faturası yok.</li>}
+        {giderInvoices.map(renderInvoiceItem)}
       </ul>
 
       {isAdmin && (
         <>
-          <h2>Silinenler</h2>
+          <h2>Silinen Gelir Faturaları</h2>
           <ul className="list card">
-            {trash.map((inv) => (
-              <li className="list-item" key={inv.id}>
-                <span className="list-item-main">
-                  {inv.reference_no} — {inv.customer_name} — {inv.total_amount} {inv.currency}
-                </span>
-                <div className="list-item-actions">
-                  <button className="btn btn-secondary" onClick={() => handleRestore(inv.id)}>
-                    Geri Yükle
-                  </button>
-                  <button className="btn btn-danger" onClick={() => handlePurge(inv.id)}>
-                    Kalıcı Olarak Sil
-                  </button>
-                </div>
-              </li>
-            ))}
+            {gelirTrash.length === 0 && <li className="list-item">Silinenler kutusu boş.</li>}
+            {gelirTrash.map(renderTrashItem)}
+          </ul>
+
+          <h2>Silinen Gider Faturaları</h2>
+          <ul className="list card">
+            {giderTrash.length === 0 && <li className="list-item">Silinenler kutusu boş.</li>}
+            {giderTrash.map(renderTrashItem)}
           </ul>
         </>
       )}
