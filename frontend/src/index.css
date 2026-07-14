@@ -30,7 +30,7 @@ body {
   color: var(--color-text);
 }
 
-#root {
+.app-shell {
   max-width: 880px;
   margin: 0 auto;
   padding: 0 24px 48px;
@@ -274,4 +274,139 @@ input:focus, select:focus {
   gap: 8px;
   align-items: center;
   width: 100%;
+}
+
+/* Login — full-bleed split screen */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+}
+
+.login-brand {
+  flex: 1 1 42%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+  padding: 64px;
+  color: #fff;
+  background: linear-gradient(155deg, #2563eb 0%, #4338ca 55%, #6d28d9 100%);
+}
+
+.login-brand::before,
+.login-brand::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.09);
+  pointer-events: none;
+}
+
+.login-brand::before {
+  width: 420px;
+  height: 420px;
+  top: -140px;
+  right: -140px;
+}
+
+.login-brand::after {
+  width: 260px;
+  height: 260px;
+  bottom: -90px;
+  left: -70px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.login-brand-icon {
+  width: 52px;
+  height: 52px;
+  color: #fff;
+  position: relative;
+  z-index: 1;
+}
+
+.login-brand h1 {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  font-size: 2.1rem;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.login-brand p {
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 1.02rem;
+  max-width: 34ch;
+  margin: 0;
+}
+
+.login-brand-badges {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.login-brand-badge {
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.login-form-panel {
+  flex: 1 1 58%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: var(--color-bg);
+}
+
+.login-form-panel form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  width: 320px;
+}
+
+.login-form-panel h2 {
+  margin: 0;
+}
+
+.login-form-panel .lede {
+  color: var(--color-text-muted);
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+}
+
+.login-form-panel input {
+  width: 100%;
+}
+
+.login-form-panel .btn {
+  margin-top: 4px;
+}
+
+@media (max-width: 760px) {
+  .login-page {
+    flex-direction: column;
+  }
+  .login-brand {
+    flex: 0 0 auto;
+    padding: 40px 28px;
+  }
+  .login-form-panel {
+    padding: 32px 24px 48px;
+  }
 }

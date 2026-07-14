@@ -14,7 +14,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div>
+    <div className="app-shell">
       <header className="app-header">
         <h1>Muhasebe Entegrasyon</h1>
         <nav className="app-nav">
