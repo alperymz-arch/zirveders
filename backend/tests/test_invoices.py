@@ -318,3 +318,46 @@ def test_update_invoice_requires_auth(client):
         "/api/accounting/invoices/1", json={"lines": [{"aciklama": "y", "tutar": 30}]}
     )
     assert response.status_code == 401
+
+
+def test_invoice_defaults_to_gelir(client, db_session):
+    headers = _auth_headers(client, db_session, "type1@example.com")
+
+    response = client.post(
+        "/api/accounting/invoices",
+        json={"customer_external_id": "C001", "lines": [{"aciklama": "x", "tutar": 10}]},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["invoice_type"] == "gelir"
+
+
+def test_invoice_type_gider_is_saved(client, db_session):
+    headers = _auth_headers(client, db_session, "type2@example.com")
+
+    response = client.post(
+        "/api/accounting/invoices",
+        json={
+            "customer_external_id": "C001",
+            "invoice_type": "gider",
+            "lines": [{"aciklama": "x", "tutar": 10}],
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["invoice_type"] == "gider"
+
+
+def test_invoice_type_invalid_value_rejected(client, db_session):
+    headers = _auth_headers(client, db_session, "type3@example.com")
+
+    response = client.post(
+        "/api/accounting/invoices",
+        json={
+            "customer_external_id": "C001",
+            "invoice_type": "yanlis",
+            "lines": [{"aciklama": "x", "tutar": 10}],
+        },
+        headers=headers,
+    )
+    assert response.status_code == 422

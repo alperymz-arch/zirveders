@@ -13,6 +13,7 @@ class CustomerDTO(BaseModel):
 class InvoiceDTO(BaseModel):
     external_id: str | None = None
     reference_no: str
+    invoice_type: str = "gelir"  # "gelir" | "gider"
     customer_external_id: str
     total_amount: float
     currency: str = "TRY"

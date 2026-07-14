@@ -3,9 +3,15 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_admin
 from app.core.db import get_db
+from app.core.security import decrypt_secret
 from app.models.user import User
 from app.schemas.accounting_settings import AccountingSettingsIn, AccountingSettingsOut
-from app.services.accounting_settings_service import get_settings_row, save_api_key
+from app.services.accounting_settings_service import (
+    ANTHROPIC_PROVIDER,
+    ZIRVE_PROVIDER,
+    get_settings_row,
+    save_api_key,
+)
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -16,16 +22,28 @@ def _to_out(api_key: str | None) -> AccountingSettingsOut:
     return AccountingSettingsOut(configured=True, api_key_preview=f"****{api_key[-4:]}")
 
 
+def _read_settings(db: Session, provider: str) -> AccountingSettingsOut:
+    row = get_settings_row(db, provider)
+    if row is None or not row.api_key_encrypted:
+        return AccountingSettingsOut(configured=False)
+    return _to_out(decrypt_secret(row.api_key_encrypted))
+
+
+def _update_settings(db: Session, provider: str, payload: AccountingSettingsIn) -> AccountingSettingsOut:
+    api_key = payload.api_key.strip()
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="API key boş olamaz"
+        )
+    save_api_key(db, api_key, provider=provider)
+    return _to_out(api_key)
+
+
 @router.get("/accounting", response_model=AccountingSettingsOut)
 def read_accounting_settings(
     db: Session = Depends(get_db), _: User = Depends(require_admin)
 ) -> AccountingSettingsOut:
-    from app.core.security import decrypt_secret
-
-    row = get_settings_row(db)
-    if row is None or not row.api_key_encrypted:
-        return AccountingSettingsOut(configured=False)
-    return _to_out(decrypt_secret(row.api_key_encrypted))
+    return _read_settings(db, ZIRVE_PROVIDER)
 
 
 @router.put("/accounting", response_model=AccountingSettingsOut)
@@ -34,10 +52,20 @@ def update_accounting_settings(
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
 ) -> AccountingSettingsOut:
-    api_key = payload.api_key.strip()
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="API key boş olamaz"
-        )
-    save_api_key(db, api_key)
-    return _to_out(api_key)
+    return _update_settings(db, ZIRVE_PROVIDER, payload)
+
+
+@router.get("/anthropic", response_model=AccountingSettingsOut)
+def read_anthropic_settings(
+    db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> AccountingSettingsOut:
+    return _read_settings(db, ANTHROPIC_PROVIDER)
+
+
+@router.put("/anthropic", response_model=AccountingSettingsOut)
+def update_anthropic_settings(
+    payload: AccountingSettingsIn,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> AccountingSettingsOut:
+    return _update_settings(db, ANTHROPIC_PROVIDER, payload)

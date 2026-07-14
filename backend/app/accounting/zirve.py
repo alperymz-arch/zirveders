@@ -81,6 +81,7 @@ class ZirveAccountingProvider(AccountingProvider):
         # TODO: gerçek endpoint path'i ve gövde alan adları teyit edilecek (örn. /fatura).
         payload = {
             "referansNo": invoice.reference_no,
+            "faturaTipi": invoice.invoice_type,  # TODO: Zirve/ZirAPI tarafındaki gerçek alan adı teyit edilecek
             "cariKod": invoice.customer_external_id,
             "toplamTutar": invoice.total_amount,
             "paraBirimi": invoice.currency,

@@ -4,6 +4,7 @@ from app.core.security import decrypt_secret, encrypt_secret
 from app.models.accounting_settings import AccountingSettings
 
 ZIRVE_PROVIDER = "zirve"
+ANTHROPIC_PROVIDER = "anthropic"  # PDF fatura okuma için Claude API anahtarı
 
 
 def get_settings_row(db: Session, provider: str = ZIRVE_PROVIDER) -> AccountingSettings | None:

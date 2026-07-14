@@ -1,6 +1,9 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
+
+InvoiceType = Literal["gelir", "gider"]
 
 
 class InvoiceLineIn(BaseModel):
@@ -11,6 +14,7 @@ class InvoiceLineIn(BaseModel):
 class InvoiceCreate(BaseModel):
     customer_external_id: str
     reference_no: str | None = None
+    invoice_type: InvoiceType = "gelir"
     currency: str = "TRY"
     lines: list[InvoiceLineIn] = Field(min_length=1)
 
@@ -27,6 +31,7 @@ class InvoiceLineOut(BaseModel):
 class InvoiceOut(BaseModel):
     id: int
     reference_no: str
+    invoice_type: str
     customer_external_id: str
     customer_name: str
     total_amount: float

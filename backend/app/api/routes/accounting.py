@@ -102,6 +102,7 @@ def _to_invoice_out(invoice: Invoice) -> InvoiceOut:
     return InvoiceOut(
         id=invoice.id,
         reference_no=invoice.reference_no,
+        invoice_type=invoice.invoice_type,
         customer_external_id=invoice.customer_external_id,
         customer_name=invoice.customer_name,
         total_amount=invoice.total_amount,
@@ -170,6 +171,7 @@ def create_invoice(
         currency=payload.currency,
         lines=[line.model_dump() for line in payload.lines],
         reference_no=payload.reference_no,
+        invoice_type=payload.invoice_type,
     )
 
     out = _to_invoice_out(invoice)

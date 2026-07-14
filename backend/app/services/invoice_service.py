@@ -20,6 +20,7 @@ def _attempt_push(
 ) -> Invoice:
     dto = InvoiceDTO(
         reference_no=invoice.reference_no,
+        invoice_type=invoice.invoice_type,
         customer_external_id=invoice.customer_external_id,
         total_amount=invoice.total_amount,
         currency=invoice.currency,
@@ -60,6 +61,7 @@ def create_and_send_invoice(
     currency: str,
     lines: list[dict],
     reference_no: str | None,
+    invoice_type: str = "gelir",
 ) -> Invoice:
     """Faturayı kaydeder ve muhasebe programına gönderir.
 
@@ -79,6 +81,7 @@ def create_and_send_invoice(
     if existing is None:
         invoice = Invoice(
             reference_no=reference_no,
+            invoice_type=invoice_type,
             customer_external_id=customer_external_id,
             customer_name=customer_name,
             total_amount=total_amount,

@@ -19,6 +19,7 @@ class Invoice(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     reference_no: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    invoice_type: Mapped[str] = mapped_column(String(10), default="gelir")  # "gelir" | "gider"
     customer_external_id: Mapped[str] = mapped_column(String(100))
     customer_name: Mapped[str] = mapped_column(String(255))
     total_amount: Mapped[float] = mapped_column(Float)
