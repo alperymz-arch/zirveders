@@ -1,0 +1,136 @@
+### Muhasebe Entegrasyon WebApp — API istekleri
+### VS Code "REST Client" eklentisiyle çalışır (her bloğu ### ayırır, "Send Request" ile tetiklenir).
+### JetBrains HTTP Client kullanıyorsan yakalanan değişken sözdizimi (# @name / {{ad.response...}})
+### birebir uyumludur.
+
+@baseUrl = http://localhost:8000/api
+@email = admin@test.com
+@password = test1234
+
+### Health check
+GET {{baseUrl}}/health
+
+### Giriş yap (token'ı sonraki isteklerde kullanmak için yakala)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username={{email}}&password={{password}}
+
+### Giriş yapmış kullanıcının bilgisi
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{login.response.body.access_token}}
+
+### Kullanıcı listesi (admin)
+GET {{baseUrl}}/users
+Authorization: Bearer {{login.response.body.access_token}}
+
+
+### ---------- Müşteriler ----------
+
+### Müşteri listesi
+GET {{baseUrl}}/accounting/customers
+Authorization: Bearer {{login.response.body.access_token}}
+
+### Yeni müşteri oluştur (kod verilmezse otomatik atanır)
+POST {{baseUrl}}/accounting/customers
+Authorization: Bearer {{login.response.body.access_token}}
+Content-Type: application/json
+
+{
+  "name": "Örnek Yeni Müşteri A.Ş.",
+  "tax_number": "1234567890"
+}
+
+### Mevcut müşteriyi güncelle
+PUT {{baseUrl}}/accounting/customers/C001
+Authorization: Bearer {{login.response.body.access_token}}
+Content-Type: application/json
+
+{
+  "name": "Güncellenmiş İsim",
+  "tax_number": "9876543210"
+}
+
+
+### ---------- Faturalar ----------
+
+### Fatura listesi (silinmemiş)
+GET {{baseUrl}}/accounting/invoices
+Authorization: Bearer {{login.response.body.access_token}}
+
+### Silinenler kutusu (admin)
+GET {{baseUrl}}/accounting/invoices/trash
+Authorization: Bearer {{login.response.body.access_token}}
+
+### Yeni fatura oluştur ve gönder
+# @name createInvoice
+POST {{baseUrl}}/accounting/invoices
+Authorization: Bearer {{login.response.body.access_token}}
+Content-Type: application/json
+
+{
+  "customer_external_id": "C001",
+  "invoice_type": "gelir",
+  "lines": [
+    { "aciklama": "Danışmanlık hizmeti", "tutar": 1250.50 },
+    { "aciklama": "Yol gideri", "tutar": 89.00 }
+  ]
+}
+
+### Fatura kalemlerini düzenle (sadece "failed" faturalarda çalışır)
+# {{createInvoice.response.body.id}} ile oluşturulan faturanın id'sini kullanabilirsin
+PUT {{baseUrl}}/accounting/invoices/1
+Authorization: Bearer {{login.response.body.access_token}}
+Content-Type: application/json
+
+{
+  "lines": [
+    { "aciklama": "Düzeltilmiş kalem", "tutar": 999.00 }
+  ]
+}
+
+### Faturayı iptal et
+POST {{baseUrl}}/accounting/invoices/1/cancel
+Authorization: Bearer {{login.response.body.access_token}}
+
+### Faturayı sil (silinenler kutusuna taşır, admin, "sent" olmayan faturalarda çalışır)
+DELETE {{baseUrl}}/accounting/invoices/1
+Authorization: Bearer {{login.response.body.access_token}}
+
+### Silinenler kutusundan geri yükle (admin)
+POST {{baseUrl}}/accounting/invoices/1/restore
+Authorization: Bearer {{login.response.body.access_token}}
+
+### Kalıcı olarak sil (admin, önce silinmiş olmalı)
+DELETE {{baseUrl}}/accounting/invoices/1/purge
+Authorization: Bearer {{login.response.body.access_token}}
+
+
+### ---------- Ayarlar (admin) ----------
+
+### ZirAPI anahtarı durumu
+GET {{baseUrl}}/settings/accounting
+Authorization: Bearer {{login.response.body.access_token}}
+
+### ZirAPI anahtarını kaydet
+PUT {{baseUrl}}/settings/accounting
+Authorization: Bearer {{login.response.body.access_token}}
+Content-Type: application/json
+
+{
+  "api_key": "buraya-gercek-zirapi-anahtarini-yaz"
+}
+
+### Anthropic (PDF fatura okuma) anahtarı durumu
+GET {{baseUrl}}/settings/anthropic
+Authorization: Bearer {{login.response.body.access_token}}
+
+### Anthropic anahtarını kaydet
+PUT {{baseUrl}}/settings/anthropic
+Authorization: Bearer {{login.response.body.access_token}}
+Content-Type: application/json
+
+{
+  "api_key": "buraya-gercek-anthropic-anahtarini-yaz"
+}
