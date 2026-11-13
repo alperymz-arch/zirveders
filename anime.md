@@ -9,7 +9,7 @@ Frontend'e animasyon altyapısı entegrasyonu. İlke: **yalnızca CSS**, yeni ba
 |---|---|---|
 | Login | Tamamlandı (push bekliyor) | `frontend/src/index.css` ("Login animasyonları") |
 | Layout (header/nav) | Yapılacak | `components/Layout.tsx` |
-| Dashboard | Yapılacak | `pages/Dashboard.tsx` |
+| Dashboard | Tamamlandı (kart + liste satırı) | `index.css` ("Genel animasyonlar") |
 | Invoices | Yapılacak | `pages/Invoices.tsx` |
 | Settings | Yapılacak | `pages/Settings.tsx` |
 
@@ -27,7 +27,7 @@ Frontend'e animasyon altyapısı entegrasyonu. İlke: **yalnızca CSS**, yeni ba
 
 1. Ortak keyframe'leri (`rise`, `shake`) `login-` önekinden çıkarıp genel yardımcı sınıflara taşı.
 2. Sayfa geçişi: route değişiminde hafif fade/rise.
-3. Dashboard kartlarında kademeli giriş + hover yükselmesi.
+3. ~~Dashboard kartları~~ — yapıldı: `.card`/`.alert` giriş animasyonu, liste satırlarında kademeli giriş + hover.
 4. Fatura tablosunda yeni/silinen satır animasyonu, durum rozeti geçişi.
 5. Toast/alert bildirimleri için giriş-çıkış animasyonu.
 

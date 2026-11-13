@@ -540,3 +540,58 @@ input:focus, select:focus {
     padding: 32px 24px 48px;
   }
 }
+
+/* Genel animasyonlar — Dashboard kartları ve liste satırları */
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card,
+.alert {
+  animation: card-rise 0.45s ease-out both;
+}
+
+.card {
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md, 0 6px 18px rgba(15, 23, 42, 0.08));
+}
+
+.list-item {
+  animation: card-rise 0.4s ease-out both;
+  transition: background-color 0.15s ease;
+}
+
+.list-item:hover {
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.list-item:nth-child(1) { animation-delay: 0.05s; }
+.list-item:nth-child(2) { animation-delay: 0.1s; }
+.list-item:nth-child(3) { animation-delay: 0.15s; }
+.list-item:nth-child(4) { animation-delay: 0.2s; }
+.list-item:nth-child(5) { animation-delay: 0.25s; }
+.list-item:nth-child(6) { animation-delay: 0.3s; }
+.list-item:nth-child(7) { animation-delay: 0.35s; }
+.list-item:nth-child(8) { animation-delay: 0.4s; }
+.list-item:nth-child(n + 9) { animation-delay: 0.45s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .alert,
+  .list-item {
+    animation: none;
+    transition: none;
+  }
+}
