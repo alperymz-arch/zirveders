@@ -595,3 +595,58 @@ input:focus, select:focus {
     transition: none;
   }
 }
+
+/* Sayfa geçişi, aktif menü ve durum rozeti */
+@keyframes page-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes badge-pop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.page-enter {
+  animation: page-fade 0.3s ease-out both;
+}
+
+.app-nav a {
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.app-nav a.active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.badge {
+  animation: badge-pop 0.35s ease-out both;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .badge,
+  .app-nav a {
+    animation: none;
+    transition: none;
+  }
+}
